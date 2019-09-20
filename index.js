@@ -1,5 +1,6 @@
 function Multikey() {
   this.__root__ = new Map();
+  this.__data__ = [];
   this.size = 0;
 }
 
@@ -22,7 +23,7 @@ Multikey.prototype.set = function (keys, value) {
   var nextKey;
   var nextNode;
   var nextNodes;
-  
+  var originalKeys = keys
   while (keys.length) {
     nextKey = first(keys);
     keys = rest(keys);
@@ -32,9 +33,9 @@ Multikey.prototype.set = function (keys, value) {
     nextNode = nextNodes.get(nextKey) || nextNodes.set(nextKey, new Map()).get(nextKey);
     node = nextNode;
   }
-
+  this._addNode(node);
   node.set('value', value);
-
+  node.set('keys', originalKeys);
   if (!node.get('valueSet')) {
     node.set('valueSet', true);
     this.size++;
@@ -49,6 +50,8 @@ Multikey.prototype.delete = function (keys) {
   if (nodeForKeys !== undefined && nodeForKeys.get('valueSet') === true) {
     nodeForKeys.set('valueSet', false);
     nodeForKeys.delete('value');
+    nodeForKeys.delete('keys');
+    this._deleteNode(nodeForKeys)
     this.size--;
     return true;
   }
@@ -56,8 +59,32 @@ Multikey.prototype.delete = function (keys) {
   return false;
 };
 
+Multikey.prototype._addNode = function (node) {
+  if (!this.__data__.includes(node)) {
+    this.__data__.push(node);
+  }
+};
+
+Multikey.prototype._deleteNode = function (node) {
+  const index = this.__data__.indexOf(node);
+  if (index === -1) {
+    return;
+  }
+  this.__data__.splice(index, 1);
+};
+Multikey.prototype.values = function () {
+  return this.__data__.map(node => {
+    return node.get('value');
+  })
+}
+Multikey.prototype.entries = function () {
+  return this.__data__.map(node => {
+    return [node.get('keys'), node.get('value')];
+  })
+}
 Multikey.prototype.clear = function () {
   this.__root__ = new Map();
+  this.__data__ = [];
   this.size = 0;
 };
 
